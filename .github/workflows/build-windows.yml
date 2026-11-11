@@ -1,18 +1,40 @@
 name: Build Windows EXE
 on:
   push:
+    branches: [main]
   workflow_dispatch:
+permissions:
+  contents: write        # needed to publish the Release
 jobs:
   build:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
       - run: pip install -r requirements.txt pyinstaller
-      - run: pyinstaller --noconfirm --onefile --name StockLogoDownloader --collect-all resvg_py app.py
+      - name: Offline tests
+        run: python tests/test_offline.py
+      - name: Build the EXE
+        run: pyinstaller --noconfirm --onefile --name StockLogoDownloader --collect-all resvg_py app.py
+      - name: Check the EXE really runs
+        run: dist\StockLogoDownloader.exe --selftest
       - uses: actions/upload-artifact@v4
         with:
           name: StockLogoDownloader-exe
           path: dist/StockLogoDownloader.exe
+      - name: Publish as a Release (one-click download)
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VER=$(python -c "import re;print(re.search(r'VERSION = \"([^\"]+)\"', open('app.py', encoding='utf-8').read()).group(1))")
+          TAG="v$VER"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" dist/StockLogoDownloader.exe --clobber
+          else
+            gh release create "$TAG" dist/StockLogoDownloader.exe \
+              --title "Stock Logo Downloader $VER" --target "$GITHUB_SHA" --latest \
+              --notes "Download **StockLogoDownloader.exe** below and double-click it. No install needed. See README for details."
+          fi

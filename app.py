@@ -9,6 +9,7 @@ import json
 import os
 import re
 import subprocess
+import sys
 import threading
 import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -846,11 +847,28 @@ class Handler(BaseHTTPRequestHandler):
         return self._json(404, {"error": "Unknown action."})
 
 
+def selftest():
+    """Used by the build: proves the packaged program can draw SVGs, then exits."""
+    svg = ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 20">'
+           '<rect width="10" height="20" fill="#e00"/></svg>')
+    img = core.render_svg(svg, 200)
+    if img is None or max(img.size) != 200:
+        print("SELFTEST FAILED: could not render SVG", img and img.size)
+        sys.exit(1)
+    print(f"selftest ok - version {VERSION}, rendered {img.size}")
+
+
 def main():
+    if "--selftest" in sys.argv:
+        return selftest()
     server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
     url = f"http://127.0.0.1:{server.server_address[1]}/"
+    if os.name == "nt":
+        os.system(f"title Stock Logo Downloader {VERSION}")
     print(f"Stock Logo Downloader {VERSION} is running at", url)
-    print("Leave this window open while you use it (use the Quit button to close).")
+    print("Your browser should open by itself. If it doesn't, copy the address above")
+    print("into your browser. Leave this window open while you use it; press Quit")
+    print("on the page (or close this window) when you are done.")
     webbrowser.open(url)
     server.serve_forever()
 

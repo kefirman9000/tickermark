@@ -1,5 +1,11 @@
 STOCK LOGO DOWNLOADER v6.1 - SIMPLE WINDOWS VERSION (no tkinter needed)
 
+EASIEST: download StockLogoDownloader.exe from
+  https://github.com/kefirman9000/tickermark/releases/latest
+and double-click it. Nothing to install. (If Windows says "Windows protected your
+PC", click More info -> Run anyway.) The steps below are only for running from
+the source files instead.
+
 1. Unzip this folder anywhere (not inside the zip).
 2. Double-click Install.bat  (one time: sets up Python + packages, makes a desktop shortcut)
 3. A page opens in your browser. Choose "Market lists" or "My tickers", press Start,
