@@ -1,5 +1,5 @@
 """
-Stock Logo Downloader - simple version (v6.1).
+Stock Logo Downloader - simple version (v6.2).
 Double-click Run.bat: a page opens in your browser. No tkinter needed.
 Needs Python + requests + pillow + resvg-py (yfinance is used as a backup if present).
 """
@@ -19,7 +19,7 @@ from PIL import Image
 
 import logo_core as core
 
-VERSION = "6.1"
+VERSION = "6.2"
 APPDATA = os.path.join(os.environ.get("APPDATA", os.path.expanduser("~")),
                        "StockLogoDownloader")
 SETTINGS = os.path.join(APPDATA, "web_settings.json")
@@ -112,10 +112,11 @@ textarea{resize:vertical;min-height:84px}
 .btn.danger{color:var(--danger)}
 .btn.danger.armed{background:var(--danger);color:#fff;border-color:transparent}
 .btn.small{padding:6px 11px;font-size:13px}
-.actions{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:18px}
+.actions{display:grid;grid-template-columns:1fr auto;gap:8px;margin:18px -18px 0;padding:12px 18px;position:sticky;bottom:0;background:var(--surface);border-top:1px solid var(--border);border-radius:0 0 14px 14px;z-index:2}
 .link{background:none;border:0;color:var(--muted);cursor:pointer;padding:4px 0;font-size:13px}
 .link:hover{color:var(--fg);text-decoration:underline}
 .hint{color:var(--muted);font-size:12px;margin:6px 0 0}
+.sub{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600;margin:18px 0 0;padding-top:16px;border-top:1px solid var(--border)}
 .statusline{display:flex;justify-content:space-between;gap:12px;font-weight:550}
 .statusline span:last-child{color:var(--muted);font-variant-numeric:tabular-nums;flex:none}
 .bar{height:8px;background:var(--surface2);border-radius:99px;overflow:hidden;margin:12px 0}
@@ -217,8 +218,22 @@ dialog::backdrop{background:rgba(0,0,0,.55)}
    <input type="file" id="importfile" accept=".csv,.txt,.tsv,text/csv,text/plain" hidden>
    <p class="hint" id="importmsg"></p>
   </div>
+  <h3 class="sub">Download options</h3>
+  <div class="pair">
+   <div><label class="f" for="style">Style</label><select id="style"><option value="icon">Icon (square)</option><option value="logo">Logo (full)</option><option value="symbol">Symbol</option></select></div>
+   <div><label class="f" for="color">Color</label><select id="color"><option value="color">Full color</option><option value="black">Black</option><option value="white">White</option></select></div>
+  </div>
+  <label class="switch"><input type="checkbox" id="all_colors"><span class="track"></span><span>Make all three colors in one run<small>Full color, black and white</small></span></label>
+  <label class="switch"><input type="checkbox" id="vector"><span class="track"></span><span>Look for SVG first<small>Saves the scalable SVG and renders the PNG from it</small></span></label>
+  <label class="switch"><input type="checkbox" id="upgrade_svg"><span class="track"></span><span>Add SVGs to logos I already have<small>Adds the SVG only; your PNGs are not touched</small></span></label>
+  <label class="switch"><input type="checkbox" id="png_only"><span class="track"></span><span>Real PNG files only<small>Rejects JPEG, .ico and upscaled favicons</small></span></label>
   <label class="switch"><input type="checkbox" id="skip_existing"><span class="track"></span><span>Skip logos I already have</span></label>
   <label class="switch"><input type="checkbox" id="zip"><span class="track"></span><span>Also make a ZIP of each run</span></label>
+  <div class="pair">
+   <div><label class="f" for="png_size">PNG size from SVG (px)</label><input type="number" id="png_size" min="256" max="8192" step="256"></div>
+   <div><label class="f" for="min_px" title="Logos narrower than this are rejected">Min. width (px)</label><input type="number" id="min_px" min="0"></div>
+  </div>
+  <p class="hint">More (padding, extra sizes, keys, speed) under the gear icon.</p>
   <label class="f" for="folder">Save folder</label>
   <div class="folder"><input type="text" id="folder"><button class="btn" id="open">Open</button></div>
   <div class="actions"><button class="btn primary" id="start">Start download</button><button class="btn" id="cancel">Cancel</button></div>
@@ -293,18 +308,7 @@ dialog::backdrop{background:rgba(0,0,0,.55)}
 <div id="scrim"></div>
 <aside id="drawer" aria-label="Settings">
  <div class="dhead"><h2>Settings</h2><span id="saved">Saved</span><button class="icon-btn" id="close" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
- <div class="group"><h3>Output</h3>
-  <label class="switch"><input type="checkbox" id="vector"><span class="track"></span><span>Look for SVG first<small>Saves the scalable SVG and renders the PNG from it</small></span></label>
-  <label class="switch"><input type="checkbox" id="upgrade_svg"><span class="track"></span><span>Add SVGs to logos I already have<small>Adds the SVG only; your PNGs are not touched</small></span></label>
-  <label class="switch"><input type="checkbox" id="all_colors"><span class="track"></span><span>Make all three colors in one run</span></label>
-  <label class="switch"><input type="checkbox" id="png_only"><span class="track"></span><span>Real PNG files only<small>Rejects JPEG, .ico and upscaled favicons</small></span></label>
-  <div class="pair">
-   <div><label class="f" for="style">Style</label><select id="style"><option value="icon">Icon (square)</option><option value="logo">Logo (full)</option><option value="symbol">Symbol</option></select></div>
-   <div><label class="f" for="color">Color</label><select id="color"><option value="color">Full color</option><option value="black">Black</option><option value="white">White</option></select></div>
-   <div><label class="f" for="png_size">PNG size from SVG (px)</label><input type="number" id="png_size" min="256" max="8192" step="256"></div>
-   <div><label class="f" for="min_px">Reject narrower than (px)</label><input type="number" id="min_px" min="0"></div>
-  </div>
- </div>
+ <p class="hint" style="margin-top:14px">Style, color, SVG and size options are on the main page under <b>Download options</b>.</p>
  <div class="group"><h3>Black &amp; white versions</h3>
   <label class="switch"><input type="checkbox" id="knockout"><span class="track"></span><span>Keep inner details<small>White parts inside a logo become see-through instead of filled in</small></span></label>
   <label class="switch"><input type="checkbox" id="mono_svg"><span class="track"></span><span>Also save black / white SVGs<small>In SVG logos\Black logos and \White logos</small></span></label>

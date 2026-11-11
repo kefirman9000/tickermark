@@ -1,4 +1,4 @@
-STOCK LOGO DOWNLOADER v6.1 - SIMPLE WINDOWS VERSION (no tkinter needed)
+STOCK LOGO DOWNLOADER v6.2 - SIMPLE WINDOWS VERSION (no tkinter needed)
 
 EASIEST: download StockLogoDownloader.exe from
   https://github.com/kefirman9000/tickermark/releases/latest
@@ -11,11 +11,16 @@ the source files instead.
 3. A page opens in your browser. Choose "Market lists" or "My tickers", press Start,
    and watch the logos appear as they download.
    Logos go to Documents\StockLogos (change it on the page). The gear icon opens
-   Settings; changes save automatically (also while a download is running).
+   the extra settings (padding, sizes, keys, speed); changes save automatically (also while a download is running).
    Light/dark follows Windows; the sun button overrides it.
 4. Next time: use the desktop shortcut or Run.bat. Press Quit on the page to close.
    Updating: just unzip the new version over the old folder. Your settings and
    logos stay.
+
+NEW IN v6.2
+  * Download options (style, color, SVG, sizes...) are now on the main page
+    under "What to download" instead of hidden behind the gear icon. The
+    Start button stays visible while you scroll.
 
 NEW IN v6.1
   * More SVGs from Wikidata: it now also finds companies by the ticker on their
