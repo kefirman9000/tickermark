@@ -16,6 +16,11 @@ Nothing to install. Keep the small black window open while you use it, and press
 signed with a paid certificate. Click **More info** and then **Run anyway**. You only
 need to do this once.
 
+**Exe blocked by your firewall or antivirus?** Download
+**[StockLogoDownloader-bat.zip](https://github.com/kefirman9000/tickermark/releases/latest/download/StockLogoDownloader-bat.zip)**
+instead, unzip it, and double-click `Install.bat` (one time). It runs the same program
+from source, so there is no unknown exe for your security software to block.
+
 ## Tips
 
 - **My tickers** tab: type `AAPL, NVDA, TSLA`, or import a CSV from your broker.

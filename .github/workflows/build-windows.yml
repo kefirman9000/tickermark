@@ -24,6 +24,8 @@ jobs:
         with:
           name: StockLogoDownloader-exe
           path: dist/StockLogoDownloader.exe
+      - name: Build the batch-file version (for PCs that block the EXE)
+        run: python .github/make_bat_zip.py
       - name: Publish as a Release (one-click download)
         shell: bash
         env:
@@ -32,9 +34,9 @@ jobs:
           VER=$(python -c "import re;print(re.search(r'VERSION = \"([^\"]+)\"', open('app.py', encoding='utf-8').read()).group(1))")
           TAG="v$VER"
           if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" dist/StockLogoDownloader.exe --clobber
+            gh release upload "$TAG" dist/StockLogoDownloader.exe dist/StockLogoDownloader-bat.zip --clobber
           else
-            gh release create "$TAG" dist/StockLogoDownloader.exe \
+            gh release create "$TAG" dist/StockLogoDownloader.exe dist/StockLogoDownloader-bat.zip \
               --title "Stock Logo Downloader $VER" --target "$GITHUB_SHA" --latest \
-              --notes "Download **StockLogoDownloader.exe** below and double-click it. No install needed. See README for details."
+              --notes "Download **StockLogoDownloader.exe** below and double-click it. No install needed. If Windows or your antivirus blocks the exe, download **StockLogoDownloader-bat.zip** instead, unzip it and double-click Install.bat. See README for details."
           fi

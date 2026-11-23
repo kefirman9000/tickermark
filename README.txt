@@ -5,6 +5,8 @@ EASIEST: download StockLogoDownloader.exe from
 and double-click it. Nothing to install. (If Windows says "Windows protected your
 PC", click More info -> Run anyway.) The steps below are only for running from
 the source files instead.
+If Windows or your antivirus blocks the exe, download StockLogoDownloader-bat.zip
+from the same Releases page, unzip it, and use the steps below.
 
 1. Unzip this folder anywhere (not inside the zip).
 2. Double-click Install.bat  (one time: sets up Python + packages, makes a desktop shortcut)
