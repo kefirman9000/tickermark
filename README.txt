@@ -1,4 +1,4 @@
-STOCK LOGO DOWNLOADER v6.2 - SIMPLE WINDOWS VERSION (no tkinter needed)
+STOCK LOGO DOWNLOADER v6.3 - SIMPLE WINDOWS VERSION (no tkinter needed)
 
 EASIEST: download StockLogoDownloader.exe from
   https://github.com/kefirman9000/tickermark/releases/latest
@@ -16,6 +16,14 @@ the source files instead.
 4. Next time: use the desktop shortcut or Run.bat. Press Quit on the page to close.
    Updating: just unzip the new version over the old folder. Your settings and
    logos stay.
+
+NEW IN v6.3
+  * Fixed: with White or Black selected, the program no longer saves a colored
+    copy of each SVG, and the live grid shows the white/black logo instead of
+    the colored one. White logos sit on a dark background in the grid, black
+    logos on a light one, so they stay visible.
+  * Fixed: after changing the Color setting and running again without
+    reloading the page, the grid could still show the previous run's pictures.
 
 NEW IN v6.2
   * Download options (style, color, SVG, sizes...) are now on the main page

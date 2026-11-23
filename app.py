@@ -1,5 +1,5 @@
 """
-Stock Logo Downloader - simple version (v6.2).
+Stock Logo Downloader - simple version (v6.3).
 Double-click Run.bat: a page opens in your browser. No tkinter needed.
 Needs Python + requests + pillow + resvg-py (yfinance is used as a backup if present).
 """
@@ -19,7 +19,7 @@ from PIL import Image
 
 import logo_core as core
 
-VERSION = "6.2"
+VERSION = "6.3"
 APPDATA = os.path.join(os.environ.get("APPDATA", os.path.expanduser("~")),
                        "StockLogoDownloader")
 SETTINGS = os.path.join(APPDATA, "web_settings.json")
