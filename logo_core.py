@@ -6,6 +6,7 @@ SVGs). yfinance is used as a backup for Yahoo lists if it is installed.
 """
 import csv
 import datetime
+import inspect
 import io
 import json
 import os
@@ -1724,10 +1725,19 @@ def run_job(cfg, base, log, status, progress, cancel, item=None):
               'svg' / 'png' (new), 'svg-added', 'missing' or 'had'
     cancel:   threading.Event
     """
-    def emit(symbol, name, kind, path=None):
+    try:
+        _ps = list(inspect.signature(item).parameters.values()) if item else []
+        _item_args = 99 if any(p.kind == p.VAR_POSITIONAL for p in _ps) else len(_ps)
+    except (TypeError, ValueError):
+        _item_args = 0
+
+    def emit(symbol, name, kind, path=None, color="color"):
         if item:
             try:
-                item(symbol, name, kind, path)
+                if _item_args >= 5:
+                    item(symbol, name, kind, path, color)
+                else:
+                    item(symbol, name, kind, path)
             except Exception:
                 pass
 
@@ -1743,7 +1753,6 @@ def run_job(cfg, base, log, status, progress, cancel, item=None):
     out = Output(base, cfg, log)
     clear_page_cache()               # fresh home pages each run
     svg_dir = os.path.join(base, SVG_DIR_NAME)
-    upgrade_svg = bool(vector and skip_existing and cfg.get("upgrade_svg", True))
     svg_index_path = os.path.join(svg_dir, "svg_index.json")
     svg_index = _read_json(svg_index_path)
     svg_by_source = Counter()
@@ -1751,6 +1760,12 @@ def run_job(cfg, base, log, status, progress, cancel, item=None):
     new_svgs = []
     colors = [c for c in (cfg.get("colors") or []) if c in COLOR_FOLDERS] or \
         (list(COLOR_FOLDERS) if cfg.get("all_colors") else [cfg.get("color", "color")])
+    # The original (coloured) SVG is only kept when Full color is part of this run.
+    # A White/Black-only run leaves no coloured files behind and previews the
+    # white/black logo, so the program does what the Color setting says.
+    keep_original = "color" in colors
+    upgrade_svg = bool(vector and skip_existing and cfg.get("upgrade_svg", True)
+                       and (keep_original or out.mono_svg_on))
 
     for sym, dom in (cfg.get("domains") or {}).items():
         update_override(base, sym, domain=dom)
@@ -1800,10 +1815,17 @@ def run_job(cfg, base, log, status, progress, cancel, item=None):
             svg_index[symbol] = {"status": st, "source": src, "date": today_str()}
             _write_json(svg_index_path, svg_index)
 
+    def svg_files(symbol, cols):
+        """[(colour, path)] of the SVG files that exist for these colours."""
+        return [(c, out.svg_path(symbol, c)) for c in cols
+                if os.path.exists(out.svg_path(symbol, c))]
+
     def svg_check_due(symbol):
-        if os.path.exists(out.svg_path(symbol)):
+        if svg_files(symbol, ["color"] if keep_original else colors):
             return False
         e = svg_index.get(symbol) or {}
+        if not keep_original and e.get("status") == "found":
+            return False        # already looked up; a black/white SVG can't always be made
         wait_days = {"none": SVG_RETRY_DAYS,
                      "unsure": SVG_UNSURE_RETRY_DAYS}.get(e.get("status"))
         if wait_days is None:
@@ -1842,12 +1864,17 @@ def run_job(cfg, base, log, status, progress, cancel, item=None):
         svg, svg_src = lookup_svg(symbol, domain, set(o.get("reject") or []), name)
         if not svg:
             return "none"
-        sp = out.svg_path(symbol)
-        write_svg(sp, svg)
-        out.write_mono_svgs(symbol, svg, [c for c in colors
-                                          if os.path.exists(png_path(libs[c], symbol))])
+        have_png = [c for c in colors if os.path.exists(png_path(libs[c], symbol))]
+        if keep_original:
+            write_svg(out.svg_path(symbol), svg)
+        out.write_mono_svgs(symbol, svg, have_png)
+        cols = (["color"] + [c for c in have_png if c != "color"]
+                if keep_original else have_png)
+        saved = svg_files(symbol, cols)
+        if not saved:
+            return "none"      # e.g. the SVG holds a bitmap, so no black/white SVG
         with JSON_LOCK:
-            new_svgs.append(sp)
+            new_svgs.extend(p for _c, p in saved)
             svg_by_source[svg_src] += 1
             upgraded[0] += 1
             for c in colors:
@@ -1856,7 +1883,7 @@ def run_job(cfg, base, log, status, progress, cancel, item=None):
                     e["vector"], e["svg_source"] = "yes", svg_src
                     save_index(libs[c], indexes[c])
         log(f"SVG ADDED {symbol}  {name}  [{svg_src}]")
-        emit(symbol, name, "svg-added", sp)
+        emit(symbol, name, "svg-added", saved[0][1], saved[0][0])
         return "added"
 
     def fetch_one(symbol, label, needed):
@@ -1882,12 +1909,14 @@ def run_job(cfg, base, log, status, progress, cancel, item=None):
                         f"trying a PNG source for the PNG.")
         if img is None:
             img, src = fetcher.get(symbol, domain, skip)
-        if svg:                                  # keep the scalable original
-            sp = out.svg_path(symbol)
-            write_svg(sp, svg)
+        if svg:
             with JSON_LOCK:
-                new_svgs.append(sp)
                 svg_by_source[svg_src] += 1
+            if keep_original:                    # keep the scalable original
+                sp = out.svg_path(symbol)
+                write_svg(sp, svg)
+                with JSON_LOCK:
+                    new_svgs.append(sp)
         if img and getattr(img, "src_format", "") != "SVG" and img.width < min_px:
             log(f"TOO SMALL {symbol}  {name}  ({img.width}px < {min_px}px)")
             img = None
@@ -1904,10 +1933,15 @@ def run_job(cfg, base, log, status, progress, cancel, item=None):
                     save_index(libs[c], indexes[c])
                     new_files[c].append(paths[c])
                 by_source[src] += 1
+                new_svgs.extend(p for _c, p in svg_files(
+                    symbol, [c for c in needed if c != "color"]))
             log(f"NEW      {symbol}  {name}  [{src}, {img.width}px"
                 f"{', +SVG' if svg else ''}]")
-            emit(symbol, name, "svg" if svg else "png",
-                 out.svg_path(symbol) if svg else paths[needed[0]])
+            shown = svg_files(symbol, needed) if svg else []
+            if shown:                  # preview the colour that was asked for
+                emit(symbol, name, "svg", shown[0][1], shown[0][0])
+            else:
+                emit(symbol, name, "png", paths[needed[0]], needed[0])
             return "new"
         with JSON_LOCK:
             for c in needed:
@@ -1917,6 +1951,8 @@ def run_job(cfg, base, log, status, progress, cancel, item=None):
                     "list": label, "date": today_str()}
                 save_index(libs[c], indexes[c])
             missing.append(symbol)
+        if svg and not keep_original:          # SVG found but no PNG: keep black/white SVGs
+            out.write_mono_svgs(symbol, svg, needed)
         emit(symbol, name, "missing")
         log(f"MISSING  {symbol}  {name}"
             f"{'' if domain else '  (no website known - set one in the Library)'}")

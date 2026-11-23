@@ -69,6 +69,9 @@ OUTPUT
   Documents\StockLogos\SVG logos\   <- the original SVGs (scale to any size)
   Documents\StockLogos\             <- big transparent PNGs rendered from the SVGs
   (Black logos / White logos sub-folders if you pick those colors)
+  The colored original SVG is only kept when Full color is part of the run. A
+  White-only or Black-only run saves just the white/black SVGs (SVG logos\White
+  logos, SVG logos\Black logos) and its previews show that color.
   Where no SVG exists, you get the best real PNG instead (never upscaled).
 
 SVG sources, in order: Brandfetch (SVG), Wikidata/Wikimedia Commons (matched by

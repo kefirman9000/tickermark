@@ -138,6 +138,8 @@ textarea{resize:vertical;min-height:84px}
   background-image:linear-gradient(45deg,var(--check2) 25%,transparent 25%,transparent 75%,var(--check2) 75%),linear-gradient(45deg,var(--check2) 25%,transparent 25%,transparent 75%,var(--check2) 75%);
   background-size:16px 16px;background-position:0 0,8px 8px}
 .thumb img{max-width:100%;max-height:100%;object-fit:contain}
+[data-c="white"]{--check1:#222733;--check2:#2f3645}
+[data-c="black"]{--check1:#ffffff;--check2:#e4e7ee}
 .tile.missing .thumb{font-size:30px;color:var(--muted);background:var(--surface2)}
 .badge{position:absolute;top:6px;right:6px;font-size:10.5px;font-weight:650;letter-spacing:.03em;padding:2px 7px;border-radius:99px;background:var(--accent);color:#fff}
 .tile.png .badge{background:#5b6478}
@@ -383,8 +385,8 @@ $("importfile").onchange=async e=>{const f=e.target.files[0];e.target.value="";i
 
 /* ---------- this run ---------- */
 const BADGE={svg:"SVG",png:"PNG","svg-added":"SVG added",missing:"No logo",mine:"My file"};
-function tile(symbol,name,kind,src){
- const a=document.createElement("button");a.type="button";a.className="tile "+kind;
+function tile(symbol,name,kind,src,c){
+ const a=document.createElement("button");a.type="button";a.className="tile "+kind;a.dataset.c=c||"color";
  a.onclick=()=>openDetail(symbol);
  const th=document.createElement("div");th.className="thumb";
  if(!src){th.textContent="?"}else{const im=document.createElement("img");im.src=src;im.alt=symbol;im.loading="lazy";th.appendChild(im)}
@@ -394,7 +396,7 @@ function tile(symbol,name,kind,src){
  cap.append(b,s);a.append(th,cap);return a}
 function syncTiles(st){
  if(st.run!==run){run=st.run;shown=0;[...$("gallery").querySelectorAll(".tile")].forEach(n=>n.remove())}
- for(;shown<st.items.length;shown++){const it=st.items[shown];$("gallery").appendChild(tile(it.symbol,it.name,it.kind,it.kind==="missing"?null:"/img/"+it.i))}
+ for(;shown<st.items.length;shown++){const it=st.items[shown];$("gallery").appendChild(tile(it.symbol,it.name,it.kind,it.kind==="missing"?null:"/img/"+it.i+"?r="+st.run,it.color))}
  $("empty").style.display=shown?"none":""}
 async function poll(){try{const st=await (await fetch("/state")).json();
  if(!loaded){fill(st.settings);loaded=true}
@@ -427,7 +429,7 @@ function matches(it){const q=$("q").value.trim().toLowerCase(),f=$("filter").val
 function renderLib(){const g=$("libgrid");g.textContent="";const c=$("libcolor").value;
  const list=(libData||[]).filter(matches);
  list.slice(0,libLimit).forEach(it=>{const kind=!it.has_png?"missing":it.locked?"mine":it.has_svg?"svg":"png";
-  g.appendChild(tile(it.symbol,it.name,kind,it.has_png?"/thumb?"+qs({c,s:it.symbol,f:folder(),v:ver}):null))});
+  g.appendChild(tile(it.symbol,it.name,kind,it.has_png?"/thumb?"+qs({c,s:it.symbol,f:folder(),v:ver}):null,c))});
  if(!list.length){const e=document.createElement("div");e.className="empty";e.textContent=libData&&libData.length?"Nothing matches.":"No logos in this folder yet.";g.appendChild(e)}
  $("libcount").textContent=`${list.length} of ${(libData||[]).length}`;
  $("more").hidden=list.length<=libLimit}
@@ -445,6 +447,7 @@ async function openDetail(sym){
  const u=t=>"/file?"+qs({c,s:it.symbol,t,f:folder(),v:ver});
  $("d-png").hidden=!it.has_png;$("d-png-open").hidden=!it.has_png;if(it.has_png){$("d-png").src=u("png");$("d-png-open").href=u("png")}
  $("d-svg").hidden=!it.has_svg;$("d-svg-open").hidden=!it.has_svg;if(it.has_svg){$("d-svg").src=u("svg");$("d-svg-open").href=u("svg")}
+ $("d-pngbox").dataset.c=c;$("d-svgbox").dataset.c=c;
  $("d-pngbox").dataset.none=it.has_png?"":"1";$("d-svgbox").dataset.none=it.has_svg?"":"1";
  const facts=[["Status",it.status||"-"],["Source",it.source||"-"],["Width",it.width?it.width+" px":"-"],["SVG from",it.svg_source||(it.has_svg?"-":"no SVG")],["List",it.list||"-"],["Date",it.date||"-"]];
  if(it.locked)facts.unshift(["Locked","Your own file - runs never replace it"]);
@@ -553,7 +556,7 @@ def set_progress(v, m):
         STATE["progress"] = [v, m]
 
 
-def add_item(symbol, name, kind, path):
+def add_item(symbol, name, kind, path, color="color"):
     """Called by the engine once per logo; feeds the thumbnail grid + counters."""
     with LOCK:
         c = STATE["counts"]
@@ -569,7 +572,8 @@ def add_item(symbol, name, kind, path):
                 c["svg"] += 1
         i = len(TILE_FILES)
         TILE_FILES.append(path)
-        STATE["items"].append({"i": i, "symbol": symbol, "name": name, "kind": kind})
+        STATE["items"].append({"i": i, "symbol": symbol, "name": name, "kind": kind,
+                               "color": color})
 
 
 def work(cfg, base):
